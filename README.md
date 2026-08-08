@@ -17,7 +17,6 @@ Después de reinstalar o formatear Mint, dejar el escritorio como estaba puede l
 <img width="437" height="361" alt="1 mintsetup-menu-inicio" src="https://github.com/user-attachments/assets/62b687b7-edf5-4d65-9cf8-5ccf3e76f672" />
 <img width="581" height="499" alt="2 mintsetup-guardar" src="https://github.com/user-attachments/assets/b2bebefe-0357-45c9-85da-bd1904566fa3" />
 <img width="522" height="385" alt="3 mintsetup-restaurar" src="https://github.com/user-attachments/assets/b467e3c2-1671-44ae-8906-ef5522b57100" />
-<img width="462" height="366" alt="4 mintsetup-avanzado" src="https://github.com/user-attachments/assets/d8169144-1653-4a5a-b068-ec139b062277" />
 
 
 | Herramienta | Qué recupera |
