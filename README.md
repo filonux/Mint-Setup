@@ -13,6 +13,13 @@ y recupéralo entero la próxima vez que instales Mint desde cero.
 
 Después de reinstalar o formatear Mint, dejar el escritorio como estaba puede llevarte horas: recolocar paneles y applets, reinstalar cada aplicación una a una, volver a configurar Firefox, VS Code, Docker... Mint-Setup no copia el sistema completo —para eso ya tienes Timeshift— ni tus archivos personales —para eso está MintBackup—. En vez de eso, **describe cómo está configurado tu entorno** (con dconf, gsettings, apt-mark, flatpak, listas de extensiones...) y, sobre una instalación nueva, vuelve a aplicar exactamente esa configuración.
 
+
+<img width="437" height="361" alt="1 mintsetup-menu-inicio" src="https://github.com/user-attachments/assets/62b687b7-edf5-4d65-9cf8-5ccf3e76f672" />
+<img width="581" height="499" alt="2 mintsetup-guardar" src="https://github.com/user-attachments/assets/b2bebefe-0357-45c9-85da-bd1904566fa3" />
+<img width="522" height="385" alt="3 mintsetup-restaurar" src="https://github.com/user-attachments/assets/b467e3c2-1671-44ae-8906-ef5522b57100" />
+<img width="462" height="366" alt="4 mintsetup-avanzado" src="https://github.com/user-attachments/assets/d8169144-1653-4a5a-b068-ec139b062277" />
+
+
 | Herramienta | Qué recupera |
 |---|---|
 | Timeshift | El sistema |
