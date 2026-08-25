@@ -1,4 +1,4 @@
-[![Icono de Mint-Setup](assets/icon.png)](assets/icon.png)
+[![Icono de Mint-Setup]<img src="assets/icon.png" width="128" height="128">
 
 # Mint-Setup
 
