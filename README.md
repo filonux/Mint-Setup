@@ -143,7 +143,7 @@ Mint-Setup está en español: menús, diálogos, mensajes y comentarios del cód
 - [ ] Traducción completa de menús, diálogos y mensajes al inglés
 - [ ] Forma de elegir idioma (detección del sistema o una opción explícita)
 - [ ] README en inglés
-- [ ] Adaptarlo a otras versiones de Linux Mint
+- [ ] Adaptarlo a otras versiones de Linux y empaquetarlo en un .deb
 
 Si te interesaría usarlo en inglés, dilo en un issue — es la señal que necesito para priorizarlo.
 
