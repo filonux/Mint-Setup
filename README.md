@@ -1,4 +1,4 @@
-<img src="assets/icon.png" width="140" height="140">
+<img src="assets/icon1.png" width="140" height="140">
 
 # Mint-Setup
 
