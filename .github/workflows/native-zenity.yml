@@ -1,0 +1,61 @@
+name: Native Zenity GUI
+
+# Runs the real Zenity GUI under Xvfb on Ubuntu 24.04 (the Linux Mint 22 base).
+
+on:
+  push:
+    paths:
+      - 'script/**'
+      - 'tests/**'
+      - '.github/workflows/native-zenity.yml'
+  pull_request:
+    paths:
+      - 'script/**'
+      - 'tests/**'
+      - '.github/workflows/native-zenity.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  zenity:
+    name: Zenity on Ubuntu 24.04
+    runs-on: ubuntu-24.04
+    container: ubuntu:24.04
+    timeout-minutes: 30
+    steps:
+      - name: Install native GUI test dependencies
+        run: |
+          echo 'Acquire::Retries "3";' > /etc/apt/apt.conf.d/80-retries
+          apt-get update
+          # git goes in before the checkout so it makes a real clone instead of using the REST fallback.
+          # language-pack-gnome-es-base is the Spanish Zenity catalog: without it one run prints SKIP.
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            bash ca-certificates git locales python3 zenity xvfb xdotool x11-utils imagemagick \
+            tesseract-ocr tesseract-ocr-spa dbus-x11 \
+            fonts-dejavu-core fonts-noto-color-emoji language-pack-gnome-es-base
+          printf 'en_US.UTF-8 UTF-8\nes_ES.UTF-8 UTF-8\n' > /etc/locale.gen
+          locale-gen >/dev/null
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      # The captures go outside the checkout, so the working tree stays clean. The suite goes through
+      # run.sh with TEST_STRICT=1, not directly: a SKIP line (a missing Spanish Zenity catalog, say)
+      # must fail the step instead of passing silently. -v keeps the per-check PASS lines in the log.
+      - name: Run native Zenity GUI suite
+        run: NATIVE_ZENITY_OUT="$RUNNER_TEMP/native-zenity-results" TEST_STRICT=1 bash tests/run.sh --only native-zenity -v
+      - name: Upload native GUI captures
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: native-zenity-captures
+          path: ${{ runner.temp }}/native-zenity-results/
+          if-no-files-found: warn
+          # A re-run keeps the first attempt's artifact; without this the upload fails with 409.
+          overwrite: true

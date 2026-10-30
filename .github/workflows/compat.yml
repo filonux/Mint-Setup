@@ -1,0 +1,78 @@
+name: Ubuntu compatibility
+
+# Runs the non-graphical test suites inside clean Ubuntu containers: 22.04 (the Linux Mint 21
+# base, bash 5.1) and 24.04 (the Linux Mint 22 base, bash 5.2). Both legs are required. Each runs the
+# suites twice: as root (the container default) and as an unprivileged user with TEST_STRICT=1,
+# where a skipped check fails the leg.
+
+on:
+  push:
+    paths:
+      - 'script/**'
+      - 'tests/**'
+      - '.github/workflows/compat.yml'
+  pull_request:
+    paths:
+      - 'script/**'
+      - 'tests/**'
+      - '.github/workflows/compat.yml'
+  schedule:
+    - cron: '17 4 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  suites:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-24.04
+    container: ${{ matrix.image }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Ubuntu 22.04 (Linux Mint 21 base, bash 5.1)
+            image: ubuntu:22.04
+          - name: Ubuntu 24.04 (Linux Mint 22 base, bash 5.2)
+            image: ubuntu:24.04
+    steps:
+      # git goes in before the checkout so it makes a real clone instead of using the REST fallback.
+      - name: Install test dependencies
+        run: |
+          echo 'Acquire::Retries "3";' > /etc/apt/apt.conf.d/80-retries
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            bash coreutils findutils grep sed gawk tar gzip diffutils util-linux libc-bin \
+            git ca-certificates python3 locales cryptsetup-bin desktop-file-utils
+          printf 'en_US.UTF-8 UTF-8\nes_ES.UTF-8 UTF-8\n' > /etc/locale.gen
+          locale-gen >/dev/null
+
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+
+      - name: Show environment
+        run: |
+          . /etc/os-release
+          echo "$PRETTY_NAME"
+          bash --version | head -1
+          python3 --version
+          cryptsetup --version
+          locale -a | grep -iE '^(en_US|es_ES)\.utf-?8$' || echo 'en_US/es_ES UTF-8 locales: none found'
+
+      - name: Run test suites (root)
+        id: suites-root
+        run: bash ./tests/run.sh --skip native-zenity
+
+      # Root ignores file permissions, so its run skips 3 checks (SKIP lines); a normal user runs them.
+      # It still runs when the root pass fails, so one run shows both results.
+      - name: Run test suites (unprivileged, strict)
+        if: ${{ !cancelled() && steps.suites-root.conclusion != 'skipped' }}
+        run: TEST_STRICT=1 setpriv --reuid=65534 --regid=65534 --clear-groups bash ./tests/run.sh --skip native-zenity

@@ -1,0 +1,105 @@
+name: Quality
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static-analysis:
+    name: Static analysis
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      SHELLCHECK_VERSION: 0.11.0
+      SHELLCHECK_SHA256: 8c3be12b05d5c177a04c29e3c78ce89ac86f1595681cab149b65b97c4e227198
+      ACTIONLINT_VERSION: 1.7.12
+      ACTIONLINT_SHA256: 8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          fetch-depth: 2
+          # Nothing after this step talks to the remote (lint.sh and git diff read local objects).
+          persist-credentials: false
+
+      - name: Install pinned ShellCheck
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="shellcheck-v${SHELLCHECK_VERSION}.linux.x86_64.tar.xz"
+          url="https://github.com/koalaman/shellcheck/releases/download/v${SHELLCHECK_VERSION}/${archive}"
+          curl --fail --location --retry 4 --retry-delay 2 --output "$RUNNER_TEMP/$archive" "$url"
+          printf '%s %s\n' "$SHELLCHECK_SHA256" "$RUNNER_TEMP/$archive" | sha256sum --check --status
+          tar -xJf "$RUNNER_TEMP/$archive" -C "$RUNNER_TEMP"
+          install -m 0755 "$RUNNER_TEMP/shellcheck-v${SHELLCHECK_VERSION}/shellcheck" "$RUNNER_TEMP/shellcheck"
+          echo "SHELLCHECK_BIN=$RUNNER_TEMP/shellcheck" >> "$GITHUB_ENV"
+          "$RUNNER_TEMP/shellcheck" --version
+
+      - name: Install pinned actionlint
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          url="https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/${archive}"
+          curl --fail --location --retry 4 --retry-delay 2 --output "$RUNNER_TEMP/$archive" "$url"
+          printf '%s %s\n' "$ACTIONLINT_SHA256" "$RUNNER_TEMP/$archive" | sha256sum --check --status
+          tar -xzf "$RUNNER_TEMP/$archive" -C "$RUNNER_TEMP" actionlint
+          echo "ACTIONLINT_BIN=$RUNNER_TEMP/actionlint" >> "$GITHUB_ENV"
+          "$RUNNER_TEMP/actionlint" -version
+
+      - name: Install YAML parser
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends python3-yaml
+
+      - name: Run static analysis (bash -n, ShellCheck, hygiene and modes, YAML)
+        env:
+          LINT_STRICT: "1"
+        run: bash ./tests/lint.sh
+
+      # The last two steps run even when an earlier one failed (as in compat.yml), so one run lists every problem.
+      - name: Lint workflows
+        if: ${{ !cancelled() }}
+        run: '"$ACTIONLINT_BIN" -shellcheck "$SHELLCHECK_BIN" -color'
+
+      - name: Check committed diff whitespace
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Base: the first parent (the target branch in a pull request merge
+          # commit, the previous commit in a push); empty tree for a root commit.
+          base=$(git rev-parse --verify --quiet 'HEAD^' || git hash-object -t tree /dev/null)
+          # LICENSE.txt is legal text and keeps its own spacing (lint.sh skips it too).
+          git diff --check "$base" HEAD -- . ':(exclude)LICENSE.txt'
+
+  tests:
+    name: Test suites
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+
+      - name: Install test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends locales cryptsetup-bin desktop-file-utils
+          printf 'en_US.UTF-8 UTF-8\nes_ES.UTF-8 UTF-8\n' | sudo tee /etc/locale.gen >/dev/null
+          sudo locale-gen
+
+      # TEST_STRICT=1: a SKIP fails the job, so a missing tool cannot silently drop checks.
+      - name: Run test suites
+        env:
+          TEST_STRICT: "1"
+        run: bash ./tests/run.sh --skip native-zenity
