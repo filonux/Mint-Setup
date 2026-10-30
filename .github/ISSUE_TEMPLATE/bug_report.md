@@ -1,33 +1,43 @@
 ---
-name: Reporte de error
-about: Algo no funciona como debería
+name: Bug report
+about: Something does not work as it should
 title: "[BUG] "
 labels: bug
 assignees: ''
 ---
 
-## Descripción del problema
+## What happened
 
-Explica claramente qué está pasando.
+Describe the problem clearly.
 
-## Pasos para reproducirlo
+## Steps to reproduce
 
-## Comportamiento esperado
+1.
+2.
+3.
 
-Qué debería haber pasado en su lugar.
+## Expected behavior
 
-## Capturas de pantalla
+What should have happened instead?
 
-Si aplica, añade capturas que ayuden a explicar el problema.
+## Environment
 
-## Entorno
+- Mint-Setup version (`mint-setup.sh --version`):
+- Distribution and version:
+- Desktop and session (Cinnamon, X11 / Wayland):
+- Zenity version (`zenity --version`):
+- Interface language (English / Spanish):
+- Installed with `--install` or run from a clone:
+- Module or action involved:
 
-## Mensajes de error / salida de terminal
+## Output and screenshots
+
+Paste any terminal output here, and attach screenshots if they help.
 
 ```
-(pega aquí la salida)
+(paste the output here)
 ```
 
-## Contexto adicional
+## Additional context
 
-Cualquier otro detalle que pueda ser útil (elemento concreto que falla, si es de usuario/sistema/systemd/cron, etc.).
+Anything else that may help. Please remove passwords and other private data from logs and screenshots.
